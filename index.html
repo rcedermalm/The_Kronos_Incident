@@ -9,6 +9,20 @@
 	<script src="https://d3js.org/d3.v4.min.js"></script>
 	<script>
 
+	d3.queue()
+	.defer(d3.csv, "data/gps.csv")
+	.defer(d3.csv, "data/cc_data.csv")
+	.defer(d3.csv, "data/car-assignments.csv")
+	.defer(d3.csv, "data/loyalty_data.csv")
+	.await(analyze);
+
+function analyze(error, gps, ccData, carAssign, loyalty){
+	if (error) {
+		console.log(error);
+	}
+
+	var data = gps;
+
 	var projection = d3
 	.geoMercator()
 	.scale(300000)
@@ -22,8 +36,8 @@
 	.attr("width", 800)
 	.attr("height", 500);
 
+	console.log(data);
 
-	d3.csv("data/gps.csv", function(data) {
 
 		var a = getCarRoute(1, data, 1, data[0].Timestamp, data[data.length-1].Timestamp);
 		var stops = findStops(a);
@@ -57,66 +71,59 @@
 
 		}
 
-	});
+		function getCarRoute(id, data, res, start, end){
+			var a =[];
+			var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+			var time = format(start);
+			end = format(end);
+			var i = 0;
 
+			while (time < end ) {
+				if (data[i].id == id) {
+					var b = data[i];
+					a.push(b);
+				}
+				i+=res;
+				time = format(data[i].Timestamp);
+			}
+			return a;
+		}
 
-
-
-
-
-	function getCarRoute(id, data, res, start, end){
-		var a =[];
+	function findStops(gpsData){
 		var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
-		var time = format(start);
-		end = format(end);
-		var i = 0;
+		var stops = [];
+		var dif = 0;
+		for (var i = 0; i < gpsData.length-1; i++) {
 
-		while (time < end ) {
-			if (data[i].id == id) {
-				var b = data[i];
-				a.push(b);
-			}
-			i+=res;
-			time = format(data[i].Timestamp);
-		}
-		return a;
-	}
-
-function findStops(gpsData){
-	var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
-	var stops = [];
-	var dif = 0;
-	for (var i = 0; i < gpsData.length-1; i++) {
-
-		dif = d3.timeMinute.count( format(gpsData[i].Timestamp), format(gpsData[i+1].Timestamp));
+			dif = d3.timeMinute.count( format(gpsData[i].Timestamp), format(gpsData[i+1].Timestamp));
 
 
-		if ( dif >= 5  ) {
-			var stop = {
-				Timestamp : gpsData[i].Timestamp,
-				id : gpsData[i].id,
-				lat : gpsData[i].lat,
-				long : gpsData[i].long,
-			 	stopTime : dif
+			if ( dif >= 5  ) {
+				var stop = {
+					Timestamp : gpsData[i].Timestamp,
+					id : gpsData[i].id,
+					lat : gpsData[i].lat,
+					long : gpsData[i].long,
+				 	stopTime : dif
+				}
+
+				stops.push(stop);
 			}
 
-			stops.push(stop);
 		}
-
+		return stops;
 	}
 
-	return stops;
+	function plotStops(stops){
+		map.selectAll("circles")
+		.data(stops).enter()
+		.append("circle")
+		.attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
+		.attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
+		.attr("r", "1px")
+		.attr("fill", "blue");
+	}
 
-}
-
-function plotStops(stops){
-	map.selectAll("circles")
-	.data(stops).enter()
-	.append("circle")
-	.attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
-	.attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
-	.attr("r", "1px")
-	.attr("fill", "blue");
 }
 
 
