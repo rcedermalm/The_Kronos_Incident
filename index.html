@@ -7,6 +7,7 @@
 <body>
 
 	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<script src="get_persons.js"></script>
 	<script>
 
 	d3.queue()
@@ -59,6 +60,7 @@
 			//plotGps(idRoute);
 			//plotStops(stops);
 
+			var persons = get_persons(gps, carAssign, ccData, locationData);
 
 			destinations = findDestinations(stops, ccData, carAssign);
 
