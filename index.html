@@ -21,8 +21,11 @@ div.tooltip {
 
 <body>
 
+	<div id="general-person"></div>
+
 	<script src="https://d3js.org/d3.v4.min.js"></script>
 	<script src="get_persons.js"></script>
+	<script src="find_general_person.js"></script>
 	<script>
 
 	d3.queue()
@@ -81,6 +84,7 @@ div.tooltip {
 			plotStops(stops);
 
 			var persons = get_persons(gps, carAssign, ccData, locationData);
+			find_general_person(persons);
 
 			destinations = findDestinations(stops, ccData, carAssign);
 
