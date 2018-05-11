@@ -12,7 +12,6 @@ var other = ["Carlyle Chemical Inc.", "Kronos Pipe and Irrigation", "Nationwide 
              "Stewart and Sons Fabrication", "Roberts and Sons", "Maximum Iron and Steel", "Abila Scrapyard"];
 
 
-
 function find_general_person(persons){
     var format = d3.timeParse('%m/%d/%Y %H:%M');
     var hour, day, transaction;
