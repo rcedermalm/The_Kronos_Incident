@@ -5,7 +5,7 @@ d3.queue()
 	.defer(d3.csv, "data/loyalty_data.csv")
 	.defer(d3.csv, "data/location.csv")
     .await(analyze);
-    
+
 function analyze(error, gps, ccData, carAssign, loyalty, locationData){
     if (error) {
         console.log(error);
@@ -14,5 +14,5 @@ function analyze(error, gps, ccData, carAssign, loyalty, locationData){
     var persons = get_persons(gps, carAssign, ccData, locationData);
     find_general_person(persons);
 
-    getMap(gps, locationData);
+    getMap(gps, locationData, ccData);
 }
