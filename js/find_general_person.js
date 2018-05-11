@@ -14,14 +14,15 @@ var other = ["Carlyle Chemical Inc.", "Kronos Pipe and Irrigation", "Nationwide 
 
 function find_general_person(persons){
     var format = d3.timeParse('%m/%d/%Y %H:%M');
-    var hour, day, transaction;
-    var mornings = [{total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}];
-    var days = [{total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}];
-    var evenings = [{total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}];
-    var nights = [{total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}];
-    var weekends = [{total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}, {total: 0, popular: []}];
+    var hour, day, transaction, name;
+    var mornings = [{total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}];
+    var days = [{total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}];
+    var evenings = [{total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}];
+    var nights = [{total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}];
+    var weekends = [{total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}, {total: 0, popular: [], persons: []}];
 
     for(var i = 0; i < persons.length; i++){
+        name = persons[i].FirstName + " " + persons[i].LastName;
         for(var j = 0; j < persons[i].Transactions.length; j++){
             transaction = persons[i].Transactions[j];
             hour = format(transaction.Timestamp).getHours();
@@ -29,36 +30,93 @@ function find_general_person(persons){
 
             if(day >= 1 && day <= 5){
                 if(hour >= 6 && hour < 10){
-                    addToLocation(mornings, transaction.Location );
+                    addToLocation(mornings, transaction.Location, name );
                 } else if (hour >= 10 && hour < 18){
-                    addToLocation(days, transaction.Location );
+                    addToLocation(days, transaction.Location, name );
                 } else if (hour >= 18 && hour < 22){
-                    addToLocation(evenings, transaction.Location );
+                    addToLocation(evenings, transaction.Location, name );
                 } else {
-                    addToLocation(nights, transaction.Location );
+                    addToLocation(nights, transaction.Location, name );
                 }
             } else {
-                addToLocation(weekends, transaction.Location );
+                addToLocation(weekends, transaction.Location, name );
             }
         
         }  
     }
 
     for(var i = 0; i < 7; i++){
-        mornings[i].total = Math.floor(((mornings[i].total/10)/persons.length)*100);
+        mornings[i].total = (((mornings[i].total/10)/persons.length)*100).toFixed(2);
         mornings[i].popular.sort(function(a, b){return b.visits - a.visits});
-        days[i].total = Math.floor(((days[i].total/10)/persons.length)*100);
+        days[i].total = (((days[i].total/10)/persons.length)*100).toFixed(2);
         days[i].popular.sort(function(a, b){return b.visits - a.visits});
-        evenings[i].total = Math.floor(((evenings[i].total/10)/persons.length)*100);
+        evenings[i].total = (((evenings[i].total/10)/persons.length)*100).toFixed(2);
         evenings[i].popular.sort(function(a, b){return b.visits - a.visits});
-        nights[i].total = Math.floor(((nights[i].total/10)/persons.length)*100);
+        nights[i].total = (((nights[i].total/10)/persons.length)*100).toFixed(2);
         nights[i].popular.sort(function(a, b){return b.visits - a.visits});
-        weekends[i].total = Math.floor(((weekends[i].total/10)/persons.length)*100);
+        weekends[i].total = (((weekends[i].total/10)/persons.length)*100).toFixed(2);
         weekends[i].popular.sort(function(a, b){return b.visits - a.visits});
 
     }
 
+    var people_who_deviate = find_people_who_deviate(mornings, days, evenings, nights);
+    var deviate_persons = [];
+
+    for(var i = 0; i < people_who_deviate.length; i++){
+        var name = people_who_deviate[i].name.split(" ");
+        var index = persons.findIndex(person => person.FirstName == name[0] && person.LastName == name[1]);
+        if(index != -1){
+            deviate_persons.push(persons[index]);
+        }
+    }
+    //console.log(deviate_persons)
     add_findings_to_div(mornings, days, evenings, nights, weekends);
+}
+
+function find_people_who_deviate(mornings, days, evenings, nights){
+    var weird_places_mornings = find_the_types_of_places_that_differ(mornings);
+    var weird_places_days = find_the_types_of_places_that_differ(days);
+    var weird_places_evenings = find_the_types_of_places_that_differ(evenings);
+    var weird_places_nights = find_the_types_of_places_that_differ(nights);
+
+    var people_who_deviate = [];
+    addToDeviations(people_who_deviate, mornings, weird_places_mornings);
+    addToDeviations(people_who_deviate, days, weird_places_days);
+    addToDeviations(people_who_deviate, evenings, weird_places_evenings);
+    addToDeviations(people_who_deviate, nights, weird_places_nights);
+    
+    people_who_deviate.sort(function(a, b){return b.nrOfDeviations - a.nrOfDeviations});
+    
+    return people_who_deviate;
+}
+
+function addToDeviations(people_who_deviate, location, weird_places){
+    var index;
+    for(var i = 0; i < weird_places.length; i++){
+        for(var j = 0; j < location[weird_places[i]].persons.length; j++){
+            index = people_who_deviate.findIndex(person => person.name == location[weird_places[i]].persons[j])
+            if(index == -1){
+                people_who_deviate.push({
+                    name: location[weird_places[i]].persons[j],
+                    nrOfDeviations: 1
+                });
+            } else {
+                people_who_deviate[index].nrOfDeviations++;
+            }
+        }
+    }
+
+}
+
+function find_the_types_of_places_that_differ(location){
+    var weird_places = [];
+
+    for(var i = 0; i < location.length; i++){
+        if(location[i].total > 0 && location[i].total < 5){
+            weird_places.push(i);
+        }
+    }
+    return weird_places;
 }
 
 function add_findings_to_div(morning, day, evening, night, weekend){
@@ -138,11 +196,12 @@ function findIndexOfMax(timeInterval, degree){
     
 } 
 
-function addToLocation(timeInterval, location ){
+function addToLocation(timeInterval, location, nameOfPerson ){
     var typeIndex = get_type_of_location(location);
     var popIndex = (timeInterval[typeIndex].popular).findIndex(loc => loc.name == location);
 
     timeInterval[typeIndex].total++;
+    timeInterval[typeIndex].persons.push(nameOfPerson);
 
     if(popIndex == -1){
         timeInterval[typeIndex].popular.push({
