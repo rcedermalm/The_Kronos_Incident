@@ -30,34 +30,35 @@ function getMap(gps, locationData, ccData, carAssign ){
     .attr("fill-opacity", 0)
     .attr("stroke", "#000000");
 
-    var startD = "01/06/2014 07:09:01";
+    var startD = "01/6/2014 07:09:01";
     var endD = "01/19/2014 20:56:55";
-    var carID = 28;
+
+    var carID = 1;
     var d = getData(gps);
-    var idRoute = getCarRoute(carID, gps, 1, startD,endD);
-    var stops = findStops(idRoute);
+    var idRoute = getCarRoute(carID, d[carID-1], 1, startD,endD);
+    //var stops = findStops(idRoute);
+    var stops = getAllStops(d);
+
     //stops = periodOfTimeRoute(carID, stops, 20, 05);
     //var destinations = findDestinations(stops, ccData, carAssign);
     //plotGps(d[carID-1], 1);
     plotGps(idRoute, 1);
-    plotStops(stops);
-    //plotLocations(locationData);
+    plotStops(stops[carID-1]);
+
 
     var first = getFirstname(carID, carAssign);
     var last = getLastname(carID, carAssign);
 
     var tra = getTransactions(first,last, ccData, startD,  endD);
 
-    var shoping = stopAndTransaction(stops, tra);
+    var shoping = stopAndTransaction(stops[carID-1], tra);
     //plotLocations(shoping);
-    var noShoping = stopAndNoTransaction(stops, tra);
+    var noShoping = stopAndNoTransaction(stops[carID-1], tra);
     //plotLocations(noShoping);
     var shopname = "Daily Dealz";
     //var shops = getAllShopLocation(gps, carAssign, shopname);
     //plotLocations(shops);
-    //console.log(shops);
     //var av = avLocation(shops);
-    //plotLocation(av);
 
   }
 
@@ -134,30 +135,17 @@ function getMap(gps, locationData, ccData, carAssign ){
   }
 
   function getCarRoute(id, data, res, start, end){
-    console.log(data);
     var a =[];
     var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
     var time = format(start);
     end = format(end);
     start = format(start);
-
-    var i = 0;
-    for (; i < data.length; i++) {
-      if (format(data[i].Timestamp)>= start) {
-        break;
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].id == id && format(data[i].Timestamp) > start && format(data[i].Timestamp) < end) {
+        a.push(data[i]);
       }
     }
 
-while (time < end && i < data.length) {
-  if (data[i].id == id) {
-    var b = data[i];
-    a.push(b);
-  }
-  i+=res;
-  time = format(data[i].Timestamp);
-}
-
-console.log(a);
 return a;
 }
 
@@ -206,6 +194,14 @@ function findStops(gpsData){
 
   }
   return stops;
+}
+function getAllStops(gps){
+  var ind;
+  var a = [];
+  for (var i = 0; i < gps.length; i++) {
+    a.push(findStops(gps[i]));
+  }
+  return a;
 }
 
 function plotStops(stops){
@@ -269,8 +265,6 @@ function plotLocations(locations){
 }
 
 function avLocation(locations){
-  console.log(locations);
-
   var la = 0;
   var lon = 0;
   for (var i = 0; i < locations.length; i++) {
@@ -309,8 +303,7 @@ function stopAndTransaction(stops, transactions){
     }
 
   }
-  console.log(cc);
-  console.log(positions);
+
   return positions ;
 }
 
@@ -331,7 +324,7 @@ function stopAndNoTransaction(stops, transactions){
     }
 
   }
-  console.log(positions);
+
   return positions ;
 }
 
@@ -402,5 +395,23 @@ function transactionsAt(stops, transactions, shop){
   return positions ;
 }
 
+function atAPosition(stops, lat, long, radius){
+  var xd;
+  var yd;
+  var dist;
+  var s = [];
+  for (var i = 0; i < stops.length; i++) {
+    for (var z = 0; z < stops[i].length; z++) {
+    xd = stops[i][z].lat - lat;
+    yd = stops[i][z].long - long;
+    dist = Math.sqrt(Math.pow(xd, 2) + Math.pow(yd, 2));
+    if (dist < radius) {
+      s.push(stops[i][z])
 
+    }
+  }
+  }
+  console.log(s);
+  return s;
+}
 }
