@@ -14,5 +14,5 @@ function analyze(error, gps, ccData, carAssign, loyalty, locationData){
     var persons = get_persons(gps, carAssign, ccData, locationData);
     find_general_person(persons);
 
-    getMap(gps, locationData, ccData);
+    getMap(gps, locationData, ccData, carAssign);
 }
