@@ -19,7 +19,7 @@ function getMap(gps, locationData, ccData, carAssign ){
   .style("opacity", 0);
 
   d3.json("data/Abila.geojson", drawMaps);
-
+  var d, stops;
   function drawMaps(geojson) {
     map.selectAll("path")
     .data(geojson.features)
@@ -34,10 +34,10 @@ function getMap(gps, locationData, ccData, carAssign ){
     var endD = "01/19/2014 20:56:55";
 
     var carID = 1;
-    var d = getData(gps);
+     d = getData(gps);
     var idRoute = getCarRoute(carID, d[carID-1], 1, startD,endD);
     //var stops = findStops(idRoute);
-    var stops = getAllStops(d);
+    stops = getAllStops(d);
 
     //stops = periodOfTimeRoute(carID, stops, 20, 05);
     //var destinations = findDestinations(stops, ccData, carAssign);
@@ -414,4 +414,15 @@ function atAPosition(stops, lat, long, radius){
   console.log(s);
   return s;
 }
+
+this.show = function(id){
+  /*var idRoute = getCarRoute(id, d[id-1], 1, startD,endD);
+  plotGps(idRoute);
+  plotStops(stops);*/
+  map.selectAll("circle").remove();
+  plotGps(d[id-1]);
+  plotStops(stops[id-1]);
+  console.log(id);
+};
+
 }
