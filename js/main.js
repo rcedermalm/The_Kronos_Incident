@@ -4,11 +4,12 @@ d3.queue()
 	.defer(d3.csv, "data/car-assignments.csv")
 	.defer(d3.csv, "data/loyalty_data.csv")
 	.defer(d3.csv, "data/location.csv")
+	.defer(d3.csv, "data/home.csv")
     .await(analyze);
 
 		var map ,menu;
 
-function analyze(error, gps, ccData, carAssign, loyalty, locationData){
+function analyze(error, gps, ccData, carAssign, loyalty, locationData,home){
     if (error) {
         console.log(error);
     }
@@ -16,6 +17,6 @@ function analyze(error, gps, ccData, carAssign, loyalty, locationData){
     var persons = get_persons(gps, carAssign, ccData, locationData);
     find_general_person(persons);
 
-    map = new getMap(gps, locationData, ccData, carAssign);
+    map = new getMap(gps, locationData, ccData, carAssign, home);
 		menu= new menu();
 }
