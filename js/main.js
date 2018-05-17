@@ -7,7 +7,10 @@ d3.queue()
 	.defer(d3.csv, "data/home.csv")
     .await(analyze);
 
-		var map ,menu;
+// Kolla upp om folk är på samma ställe. 
+// Har någon lånat ut sitt loyalty card till någon? (De kan vara på samma ställe)
+
+var map ,menu;
 
 function analyze(error, gps, ccData, carAssign, loyalty, locationData,home){
     if (error) {
@@ -16,6 +19,7 @@ function analyze(error, gps, ccData, carAssign, loyalty, locationData,home){
 
     var persons = get_persons(gps, carAssign, ccData, locationData);
     find_general_person(persons);
+    //check_truckers(gps, persons, locationData)
 
     map = new getMap(gps, locationData, ccData, carAssign, home);
 		menu= new menu();
