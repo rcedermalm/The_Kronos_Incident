@@ -1,7 +1,9 @@
+// Array to keep info for all trucks
+var trucks = [{id: "101", gps: [], stops: [], routes: [], drivers_routes: []}, {id: "104", gps: [], stops: [], routes: [], drivers_routes: []}, {id: "105", gps: [], stops: [], routes: [], drivers_routes: []}, {id: "106", gps: [], stops: [], routes: [], drivers_routes: []}, {id: "107", gps: [], stops: [], routes: [], drivers_routes: []}];
 
-// Om de inte använder kundkortet ^
-// Kolla vart de åker efter de gjort ett inköp, åker de till ett ställe utan att köpa något nytt som inte är GAStech är det märkligt
+// Formats for time
 var gps_format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+var transaction_format = d3.timeParse('%m/%d/%Y %H:%M');
 
 function check_truckers(gps, persons, locations){
     var startTime = "01/06/2014 00:00:00";
@@ -14,9 +16,6 @@ function check_truckers(gps, persons, locations){
             truckers.push(persons[i]);
         }
     }
-
-    // Array to keep info for all trucks
-    var trucks = [{id: "101", gps: [], stops: [], routes: []}, {id: "104", gps: [], stops: [], routes: []}, {id: "105", gps: [], stops: [], routes: []}, {id: "106", gps: [], stops: [], routes: []}, {id: "107", gps: [], stops: [], routes: []}];
 
     // Add gps coordinates to the different trucks
     var index;
@@ -37,15 +36,140 @@ function check_truckers(gps, persons, locations){
         for(var k = 0; k < truckRoutes.length; k++){ // Go through all the smaller routes
             if(truckRoutes[k].length > 0){
                 trucks[i].routes.push(truckRoutes[k]);
-                routes.push(truckRoutes[k]);
             }
         }
     }
 
-    //testMap(locations, routes[routes.length-1])
-
+    // Add who is driving the truck during the routes (with a check if they stop 
+    // somewhere without buying anything)
+    for(var i = 0; i < trucks.length; i++){
+        for(var j = 0; j < trucks[i].routes.length; j++){
+            trucks[i].drivers_routes.push(checkWhoDrivesTruck(trucks[i].routes[j], truckers, locations));
+        }
+    }
 }
 
+
+
+// Get the driver of a chosen truck during a time interval 
+// or a single time (getDriver(truckID, start_time) will work as well)
+function getDriver(truckID, start_time, end_time){
+    if(end_time == "undefined"){
+        end_time = start_time
+    }
+
+    var ind = trucks.findIndex(truck => truck.id == truckID);
+    start_time = gps_format(start_time);
+    end_time = gps_format(end_time);
+
+    var drivers = []; 
+    var first_stop, last_stop, stop, driver, name;
+    for(var i = 0; i < trucks[ind].routes.length; i++){
+        first_stop = gps_format(trucks[ind].routes[i][0].timestamp);
+        last_stop = gps_format(trucks[ind].routes[i][trucks[ind].routes[i].length-1].timestamp);
+        driver = trucks[ind].drivers_routes[i];
+        name = driver.FirstName + " " + driver.LastName;
+        
+        if(start_time >= first_stop && end_time <= last_stop){ 
+            if(!drivers.find(driver => driver == name)) 
+                drivers.push(name);
+            break;
+        } else if (start_time >= first_stop && start_time <= last_stop || 
+                    end_time >= first_stop && end_time <= last_stop){
+            for(var j = 0; j < trucks[ind].routes[i].length; j++){ 
+                stop = gps_format(trucks[ind].routes[i][j].timestamp);
+                if(stop >= start_time && stop <= end_time ){
+                    if(!drivers.find(driver => driver == name)) 
+                        drivers.push(name)
+                }
+            }
+        }        
+    }
+    return drivers;
+}
+
+// Check which driver that drivers a given route for a truck
+function checkWhoDrivesTruck(route, truckers, locations){
+    var places = [];
+    for(var i = 0; i < route.length; i++){
+        places.push({location: getLocation(route[i], locations), timestamp: route[i].timestamp, stopTime: route[i].stopTime});
+    }
+
+    var start_time = gps_format(route[0].timestamp);
+    var end_time = gps_format(route[route.length-1].timestamp);
+
+    var place_counter;
+    var possible_trucker = [];
+    for(var i = 0; i < truckers.length; i++){
+        place_counter = 0;
+        possible_trucker[i] = [];
+        for(var j = 0; j < truckers[i].Transactions.length; j++){
+            var time = transaction_format(truckers[i].Transactions[j].Timestamp);
+            if(time > start_time && time < end_time){
+                while(places[place_counter].location == -1){
+                    place_counter++;
+                }
+                if(places[place_counter].location == truckers[i].Transactions[j].Location){
+                    possible_trucker[i].push(truckers[i].Transactions[j].Location);
+                    place_counter++;
+                }
+            }
+            
+        }
+    }
+
+    var trucker_index = getBestMatch(possible_trucker, places.length);
+    var no_trans_places = [];
+    var trans_places = [];
+
+    for(var j = 0; j < truckers[trucker_index].Transactions.length; j++){
+        var t = truckers[trucker_index].Transactions[j];
+        var time = transaction_format(t.Timestamp);
+        if(time > start_time && time < end_time ){
+            trans_places.push(t);
+        }
+    }
+
+    for(var i = 0; i < places.length; i++){
+        if(places[i].location != "GAStech" && !trans_places.find(place => place.Location == places[i].location)){
+            no_trans_places.push(places[i]);
+        }
+    }
+
+    var most_possible_trucker = {
+        FirstName: truckers[trucker_index].FirstName,
+        LastName: truckers[trucker_index].LastName,
+        nrOfStopsWithoutTrans: no_trans_places.length,
+        placesWithoutTrans: no_trans_places
+    };
+
+    return most_possible_trucker;
+}
+
+// To get the best matching trucker, used to check which driver drives the trucks
+function getBestMatch(trucker, totalStops){
+    var max_index = 0;
+    for(var i = 1; i < trucker.length; i++){
+        if(trucker[i].length > trucker[max_index].length){
+            max_index = i;
+        }
+    }
+
+    return max_index;
+}
+
+// Get which location the coordinates are at, returns -1 if coordinates 
+// are on a place that has not been set in "locations.csv"
+function getLocation(coord, locations){
+    var loc;
+    for(var i = 0; i < locations.length; i++){
+        loc = {lat: locations[i].lat, long: locations[i].long};
+        if(getDistance(loc, coord) < 0.001){
+            return locations[i].location;
+        }
+    }
+    return "-1";
+}
 
 // Get the routes for a truck between two dates
 function getTruckStopsRoute(stops, start, end, locations){
@@ -70,7 +194,7 @@ function getTruckStopsRoute(stops, start, end, locations){
     return truckStops;
 }
 
-// Get the gps route for a given truck
+// Get the gps route for a given truck, v.1
 function getTruckGPSRoute(id, data, res, start, end){
     var a =[];
     var time = gps_format(start);
@@ -82,6 +206,23 @@ function getTruckGPSRoute(id, data, res, start, end){
         }
     }
     return a;
+}
+
+// Get the gps route for a given truck, v.2
+function getGpsOfTruckAtInterval(id, start_time, end_time){
+    var ind = trucks.findIndex(truck => truck.id == id);
+    start_time = gps_format(start_time);
+    end_time = gps_format(end_time);
+
+    var gps = [];
+    var timestamp;
+    for(var i = 0; i < trucks[ind].gps.length; i++){
+        timestamp = gps_format(trucks[ind].gps[i].Timestamp);
+        if(timestamp > start_time && timestamp < end_time){
+            gps.push(trucks[ind].gps[i]);
+        }
+    }
+    return gps;
 }
 
 // Get the distance between two gps coords
