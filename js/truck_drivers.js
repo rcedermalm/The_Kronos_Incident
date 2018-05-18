@@ -47,9 +47,17 @@ function check_truckers(gps, persons, locations){
             trucks[i].drivers_routes.push(checkWhoDrivesTruck(trucks[i].routes[j], truckers, locations));
         }
     }
+
+    var suspicious_routes = [];
+    for(var i = 0; i < trucks.length; i++){
+        for(var j = 0; j < trucks[i].drivers_routes.length; j++){
+            var drivers_routes = trucks[i].drivers_routes[j];
+            if(drivers_routes.length > 1 || drivers_routes[0].nrOfStopsWithoutTrans > 0){     
+                suspicious_routes.push({drivers_routes: drivers_routes, routes: trucks[i].routes[j]});
+            }
+        }
+    }
 }
-
-
 
 // Get the driver of a chosen truck during a time interval 
 // or a single time (getDriver(truckID, start_time) will work as well)
@@ -117,31 +125,52 @@ function checkWhoDrivesTruck(route, truckers, locations){
             
         }
     }
-
-    var trucker_index = getBestMatch(possible_trucker, places.length);
-    var no_trans_places = [];
-    var trans_places = [];
-
-    for(var j = 0; j < truckers[trucker_index].Transactions.length; j++){
-        var t = truckers[trucker_index].Transactions[j];
-        var time = transaction_format(t.Timestamp);
-        if(time > start_time && time < end_time ){
-            trans_places.push(t);
+    var empty = 0;
+    for(var i = 0; i < possible_trucker.length; i++){
+        if(possible_trucker[i].length == 0){
+            empty++;
+        } else {
+            break;
         }
     }
 
-    for(var i = 0; i < places.length; i++){
-        if(places[i].location != "GAStech" && !trans_places.find(place => place.Location == places[i].location)){
-            no_trans_places.push(places[i]);
+    var most_possible_trucker = [];  
+
+    if(empty == possible_trucker.length){
+        most_possible_trucker.push({
+            FirstName: -1,
+            LastName: -1,
+            nrOfStopsWithoutTrans: places.length,
+            placesWithoutTrans: places
+        });
+    } else {
+        var trucker_index = getBestMatch(possible_trucker, places.length);
+
+        for(var i = 0; i < trucker_index.length; i++){
+            var no_trans_places = [];
+            var trans_places = [];
+            for(var j = 0; j < truckers[trucker_index[i]].Transactions.length; j++){
+                var t = truckers[trucker_index[i]].Transactions[j];
+                var time = transaction_format(t.Timestamp);
+                if(time > start_time && time < end_time ){
+                    trans_places.push(t);
+                }
+            }
+
+            for(var k = 0; k < places.length; k++){
+                if(places[k].location != "GAStech" && !trans_places.find(place => place.Location == places[k].location)){
+                    no_trans_places.push(places[k]);
+                }
+            }
+
+            most_possible_trucker.push({
+                FirstName: truckers[trucker_index[i]].FirstName,
+                LastName: truckers[trucker_index[i]].LastName,
+                nrOfStopsWithoutTrans: no_trans_places.length,
+                placesWithoutTrans: no_trans_places
+            }); 
         }
     }
-
-    var most_possible_trucker = {
-        FirstName: truckers[trucker_index].FirstName,
-        LastName: truckers[trucker_index].LastName,
-        nrOfStopsWithoutTrans: no_trans_places.length,
-        placesWithoutTrans: no_trans_places
-    };
 
     return most_possible_trucker;
 }
@@ -154,8 +183,15 @@ function getBestMatch(trucker, totalStops){
             max_index = i;
         }
     }
+    var index = [];
+    index.push(max_index);
+    for(var i = 0; i < trucker.length; i++){
+        if(i != max_index && trucker[i].length == trucker[max_index].length){
+            index.push(i);
+        }
+    }
 
-    return max_index;
+    return index;
 }
 
 // Get which location the coordinates are at, returns -1 if coordinates 
