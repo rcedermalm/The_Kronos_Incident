@@ -53,7 +53,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     var last = getLastname(carID, carAssign);
 
     var tra = getTransactions(first,last, ccData, startD,  endD);
-    console.log(tra);
     d3.select("#homeCheckbox").on("change",updateHome);
     d3.select("#locationCheckbox").on("change",updatelocation);
 
@@ -68,7 +67,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
 
     atAPosition(stops, 36.08955831,24.86076496, 0.002);
     var x =periodOfTimeRoute(1, stops, 22, 4);
-    console.log(x);
 
   }
 
@@ -125,7 +123,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     .attr("r", "1px")
     .attr("fill", "red")
     .attr("class","gps"+id);
-    console.log("gps"+id);
   }
 
   function getData(gps){
@@ -147,7 +144,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
           ind = 35+ind;
           a[ind].push(gps[i]);
         }
-
       }
     }
 
@@ -361,7 +357,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
       lat : la.toString(),
       long : lon.toString()
     }
-    console.log(location);
     return location;
 
   }
@@ -503,12 +498,10 @@ function getMap(gps, locationData, ccData, carAssign,home ){
         }
       }
     }
-    console.log(s);
     return s;
   }
 
   function getStopsStartToEnd(stops, startD, endD){
-    console.log(stops);
     var format = d3.utcParse('%m/%d/%Y %H:%M:%S');
     var stop = []
     for (var i = 0; i < stops.length; i++) {
@@ -518,7 +511,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
         break;
       }
     }
-    console.log(stop);
     return stop;
   }
 
