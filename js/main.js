@@ -19,7 +19,7 @@ function analyze(error, gps, ccData, carAssign, loyalty, locationData,home){
 
     var persons = get_persons(gps, carAssign, ccData, locationData);
     find_general_person(persons);
-    //check_truckers(gps, persons, locationData)
+    check_truckers(gps, persons, locationData)
 
     map = new getMap(gps, locationData, ccData, carAssign, home);
 		menu= new menu();
