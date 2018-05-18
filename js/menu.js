@@ -14,11 +14,24 @@ function menu(){
   }
 
 
-  var select = d3.select(div).text("Car-ID:")
-    .append('select')
-    	.attr('class','selectID')
-      .attr('id','selectID' )
-      .on('change',onchange);
+  var select = d3.select(div).text("Car-ID:");
+    //.append('select')
+    //.attr('class','selectID')
+      //.attr('id','selectID' );
+      //.on('change',onchange);
+
+      var options = select
+        .selectAll('option')
+      	.data(list)
+        .enter()
+      	//.append('option')
+        .append('label')
+        .text(function (d) { return d; })
+        .append("input")
+        .attr("type", "checkbox")
+        .attr("id",function(d) { return d; })
+        .on("click", onchange)
+        ;
 
       var startTime = d3.select(div2).text("start: ")
       .append('input')
@@ -40,11 +53,11 @@ function menu(){
   .attr("type", "button")
   .attr('name', 'update')
   .attr('text', update)
-  .attr('value','Update')
+  .attr('value','update')
   .on('click',onclick);
 
 
-  function onclick(){
+  function onclick(){/*
     var startD = document.getElementById("startInput").value;
     var endD = document.getElementById("endInput").value;
     var format = d3.utcParse('%m/%d/%Y %H:%M:%S');
@@ -52,28 +65,35 @@ function menu(){
 
       if (!isNaN(format(startD)) && !isNaN(format(endD)) && format(startD) < format(endD)) {
         map.show(selected, startD, endD);
-    }
+    }*/
 
 
   }
 
-
-      var options = select
-        .selectAll('option')
-      	.data(list)
-        .enter()
-      	.append('option')
-      		.text(function (d) { return d; });
-
       function onchange() {
-      	selected = document.getElementById("selectID").value;
+        selected = this.id;
+        console.log(selected);
+        console.log(document.getElementById(selected).checked);
+        //console.log(d3.selectby(select).property("checked"));
+        if(document.getElementById(selected).checked){
+          var format = d3.utcParse('%m/%d/%Y %H:%M:%S');
+          var startD = document.getElementById("startInput").value;
+          var endD = document.getElementById("endInput").value;
+          if (!isNaN(format(startD)) && !isNaN(format(endD)) && format(startD) < format(endD)) {
+            map.show(selected, startD, endD);
+          }
+
+        } else {
+          map.remove(selected);
+        }
+      	/*selected = document.getElementById("selectID").value;
         //console.log(selected);
         var startD = document.getElementById("startInput").value;
         var endD = document.getElementById("endInput").value;
         var format = d3.utcParse('%m/%d/%Y %H:%M:%S');
         if (!isNaN(format(startD)) && !isNaN(format(endD)) && format(startD) < format(endD)) {
           map.show(selected, startD, endD);
-        }
+        }*/
 
         //sp.selectDots(mlist.getValue());
       };
