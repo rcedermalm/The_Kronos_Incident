@@ -57,7 +57,32 @@ function menu(){
   .on('click',onclick);
 
 
-  function onclick(){/*
+  function onclick(){
+    var startD = document.getElementById("startInput").value;
+    var endD = document.getElementById("endInput").value;
+    var format = d3.utcParse('%m/%d/%Y %H:%M:%S');
+    var ids = [];
+    var s = [101,104,105,106,107]
+    for (var i = 1; i < 36; i++) {
+      ids.push(i);
+    }
+    for (var i = 0; i < s.length; i++) {
+      ids.push(s[i]);
+    }
+    for (var i = 0; i < ids.length; i++) {
+      var selected = document.getElementById(ids[i]).checked;
+      if (selected) {
+        if (!isNaN(format(startD)) && !isNaN(format(endD)) && format(startD) < format(endD)) {
+          map.remove(ids[i]);
+          map.show(ids[i], startD, endD);
+        }
+      }
+
+
+    }
+
+
+    /*
     var startD = document.getElementById("startInput").value;
     var endD = document.getElementById("endInput").value;
     var format = d3.utcParse('%m/%d/%Y %H:%M:%S');

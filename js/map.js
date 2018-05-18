@@ -516,16 +516,7 @@ function getMap(gps, locationData, ccData, carAssign,home ){
 
 
   this.show = function(id, start, end){
-    /*var idRoute = getCarRoute(id, d[id-1], 1, startD,endD);
-    plotGps(idRoute);
-    plotStops(stops);*/
-
-
-
     if (id<36) {
-      //map.selectAll(".gps"+pID).remove();
-      //map.selectAll(".stops" + pID).remove();
-      //pID = id;
       var r = getCarRoute(id, d[id-1], 1, start, end);
       plotGps(r,2,id);
       //var y = findStops(r);
@@ -534,14 +525,11 @@ function getMap(gps, locationData, ccData, carAssign,home ){
       console.log( "Name:" , getFirstname(id,carAssign) , getLastname(id,carAssign) , "\n", "CurrentEmploymentType: ", getEmploymentType(id,carAssign), "\n" ,"CurrentEmploymentTitle: ", getEmploymentTitle(id,carAssign));
     }
     else {
-      //map.selectAll(".gps"+pID).remove();
-      //map.selectAll(".stops"+pID).remove();
-      //console.log(pID);
-      //pID = id;
       var x =[101,104,105,106,107];
       ind = x.findIndex(car => id == car);
       if (ind != -1) {
         ind = 35+ind;
+        console.log(ind);
         var r = getCarRoute(id, d[ind], 1, start, end);
         plotGps(r,2,id);
         var y = findStops(r);
@@ -554,19 +542,8 @@ function getMap(gps, locationData, ccData, carAssign,home ){
   };
 
   this.remove = function(id){
-    if (id<36) {
       map.selectAll(".gps"+id).remove();
       map.selectAll(".stops" + id).remove();
-    }
-    else {
-      var x =[101,104,105,106,107];
-      ind = x.findIndex(car => id == car);
-      if (ind != -1) {
-        ind = 35+ind;
-        map.selectAll(".gps"+ind).remove();
-        map.selectAll(".stops" + ind).remove();
-      }
-    }
   };
 
 }
