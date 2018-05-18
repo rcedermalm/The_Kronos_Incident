@@ -105,8 +105,8 @@ function getMap(gps, locationData, ccData, carAssign,home ){
 
   function plotGps(gps , res, id){
     var data = [];
-    if (res != 1) {
-      for (var i = 0; i < gps.length; i+=2) {
+    if (res < 1) {
+      for (var i = 0; i < gps.length; i+=res) {
         data.push(gps[i]);
       }
     }
@@ -518,7 +518,7 @@ function getMap(gps, locationData, ccData, carAssign,home ){
   this.show = function(id, start, end){
     if (id<36) {
       var r = getCarRoute(id, d[id-1], 1, start, end);
-      plotGps(r,2,id);
+      plotGps(r,3,id);
       //var y = findStops(r);
       var y = getStopsStartToEnd(stops[id-1], start, end);
       plotStops(y,id);
@@ -531,7 +531,7 @@ function getMap(gps, locationData, ccData, carAssign,home ){
         ind = 35+ind;
         console.log(ind);
         var r = getCarRoute(id, d[ind], 1, start, end);
-        plotGps(r,2,id);
+        plotGps(r,3,id);
         var y = findStops(r);
         plotStops(y,id);
       }

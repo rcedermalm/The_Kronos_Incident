@@ -97,8 +97,6 @@ function menu(){
 
       function onchange() {
         selected = this.id;
-        console.log(selected);
-        console.log(document.getElementById(selected).checked);
         //console.log(d3.selectby(select).property("checked"));
         if(document.getElementById(selected).checked){
           var format = d3.utcParse('%m/%d/%Y %H:%M:%S');
