@@ -19,7 +19,8 @@ function getMap(gps, locationData, ccData, carAssign,home ){
   .style("opacity", 0);
 
   d3.json("data/Abila.geojson", drawMaps);
-  var d, stops;
+  var d, stops, pID;
+
   function drawMaps(geojson) {
 
     map.selectAll("path")
@@ -36,7 +37,7 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     var endD = "01/19/2014 20:56:55";
 
     var carID = 1;
-     d = getData(gps);
+    d = getData(gps);
     var idRoute = getCarRoute(carID, d[carID-1], 1, startD,endD);
     //var stops = findStops(idRoute);
     stops = getAllStops(d);
@@ -44,15 +45,14 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     //stops = periodOfTimeRoute(carID, stops, 20, 05);
     //var destinations = findDestinations(stops, ccData, carAssign);
     //plotGps(d[carID-1], 1);
-    plotGps(idRoute, 1);
-    plotStops(stops[carID-1]);
+    //plotGps(idRoute, 1,carID);
+    //plotStops(stops[carID-1]);
 
 
     var first = getFirstname(carID, carAssign);
     var last = getLastname(carID, carAssign);
 
     var tra = getTransactions(first,last, ccData, startD,  endD);
-    console.log(tra);
     d3.select("#homeCheckbox").on("change",updateHome);
     d3.select("#locationCheckbox").on("change",updatelocation);
 
@@ -65,9 +65,8 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     //plotLocations(shops);
     //var av = avLocation(shops);
 
-    atAPosition(stops, 36.06040509,24.90557594, 0.002);
+    atAPosition(stops, 36.08955831,24.86076496, 0.002);
     var x =periodOfTimeRoute(1, stops, 22, 4);
-    console.log(x);
 
   }
 
@@ -104,7 +103,7 @@ function getMap(gps, locationData, ccData, carAssign,home ){
 
   }
 
-  function plotGps(gps , res){
+  function plotGps(gps , res, id){
     var data = [];
     if (res != 1) {
       for (var i = 0; i < gps.length; i+=2) {
@@ -115,7 +114,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
       data = gps;
     }
 
-
     // add circles to svg
     map.selectAll("circles")
     .data(data).enter()
@@ -124,7 +122,7 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
     .attr("r", "1px")
     .attr("fill", "red")
-    .attr("class","gps");
+    .attr("class","gps"+id);
   }
 
   function getData(gps){
@@ -146,7 +144,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
           ind = 35+ind;
           a[ind].push(gps[i]);
         }
-
       }
     }
 
@@ -156,7 +153,8 @@ function getMap(gps, locationData, ccData, carAssign,home ){
 
   function getCarRoute(id, data, res, start, end){
     var a =[];
-    var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+    //var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+    var format = d3.utcParse('%m/%d/%Y %H:%M:%S');
     var time = format(start);
     end = format(end);
     start = format(start);
@@ -166,368 +164,393 @@ function getMap(gps, locationData, ccData, carAssign,home ){
       }
     }
 
-return a;
-}
-
-function updateHome(){
-				if(d3.select("#homeCheckbox").property("checked")){
-          plotHome(home);
-				} else {
-					map.selectAll(".home").remove();
-				}
-			}
-      function updatelocation(){
-      				if(d3.select("#locationCheckbox").property("checked")){
-                console.log("Fs");
-                plotLocations(locationData);
-      				} else {
-      					map.selectAll(".location").remove();
-      				}
-      			}
-
-
-function periodOfTimeRoute(id, stops, startHour, endHour){
-  var a =[];
-  if (startHour>endHour) {
-    a = periodOfTimeRoute(id, stops, startHour, 23)
-    startHour=0;
+    return a;
   }
 
-
-  var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
-
-  var i = 0;
-  var hour;
-for (var j = 0; j < stops.length; j++) {
-  for (var i = 0; i < stops[j].length; i++) {
-    hour = format(stops[j][i].Timestamp).getHours();
-    if ( startHour <= hour && hour <= endHour /*&& stops[j][i].id == id*/ ) {
-      a.push(stops[j][i]);
+  function updateHome(){
+    if(d3.select("#homeCheckbox").property("checked")){
+      plotHome(home);
+    } else {
+      map.selectAll(".home").remove();
     }
   }
-}
+  function updatelocation(){
+    if(d3.select("#locationCheckbox").property("checked")){
+      plotLocations(locationData);
+    } else {
+      map.selectAll(".location").remove();
+    }
+  }
 
-  return a;
-}
+
+  function periodOfTimeRoute(id, stops, startHour, endHour){
+    var a =[];
+    if (startHour>endHour) {
+      a = periodOfTimeRoute(id, stops, startHour, 23)
+      startHour=0;
+    }
 
 
-function findStops(gpsData){
-  var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
-  var stops = [];
-  var dif = 0;
-  for (var i = 0; i < gpsData.length-1; i++) {
+    var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
 
-    dif = d3.timeMinute.count( format(gpsData[i].Timestamp), format(gpsData[i+1].Timestamp));
-
-    if ( dif >= 5  ) {
-      var stop = {
-        Timestamp : gpsData[i].Timestamp,
-        id : gpsData[i].id,
-        lat : gpsData[i].lat,
-        long : gpsData[i].long,
-        stopTime : dif
+    var i = 0;
+    var hour;
+    for (var j = 0; j < stops.length; j++) {
+      for (var i = 0; i < stops[j].length; i++) {
+        hour = format(stops[j][i].Timestamp).getHours();
+        if ( startHour <= hour && hour <= endHour /*&& stops[j][i].id == id*/ ) {
+          a.push(stops[j][i]);
+        }
       }
-      stops.push(stop);
     }
 
-  }
-  return stops;
-}
-function getAllStops(gps){
-  var ind;
-  var a = [];
-  for (var i = 0; i < gps.length; i++) {
-    a.push(findStops(gps[i]));
-  }
-  return a;
-}
-
-function plotStops(stops){
-  map.selectAll("circles")
-  .data(stops).enter()
-  .append("circle")
-  .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
-  .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
-  .attr("r", "4px")
-  .attr("fill", "blue")
-  .attr("class", "stops")
-  .on("mouseover", function(d) {
-    console.log(d);
-    div.transition()
-    .duration(200)
-    .style("opacity", .9);
-    div.html(d.Timestamp /*+ "<br/>" + d.close*/)
-    .style("left", (d3.event.pageX) + "px")
-    .style("top", (d3.event.pageY - 28) + "px");
-  })
-  .on("mouseout", function(d) {
-    div.transition()
-    .duration(500)
-    .style("opacity", 0);
-  });;
-}
-
-function plotLocation(location){
-  // add circles to svg
-  map.selectAll("circles")
-  .data(location)
-  .append("circle")
-  .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
-  .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
-  .attr("r", "3px")
-  .attr("fill", "yellow")
-  .on("mouseover", function(d) {
-    console.log(d.location);
-    div.transition()
-    .duration(200)
-    .style("opacity", .9);
-    div.html(d.lat /*+ "<br/>" + d.close*/)
-    .style("left", (d3.event.pageX) + "px")
-    .style("top", (d3.event.pageY - 28) + "px");
-  })
-  .on("mouseout", function(d) {
-    div.transition()
-    .duration(500)
-    .style("opacity", 0);
-  });
-}
-
-function plotLocations(locations){
-  // add circles to svg
-  map.selectAll("circles")
-  .data(locations).enter()
-  .append("circle")
-  .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
-  .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
-  .attr("r", "3px")
-  .attr("fill", "yellow")
-  .attr("class", "location")
-  .on("mouseover", function(d) {
-    console.log(d.location);
-    div.transition()
-    .duration(200)
-    .style("opacity", .9);
-    div.html(d.lat /*+ "<br/>" + d.close*/)
-    .style("left", (d3.event.pageX) + "px")
-    .style("top", (d3.event.pageY - 28) + "px");
-  })
-  .on("mouseout", function(d) {
-    div.transition()
-    .duration(500)
-    .style("opacity", 0);
-  });
-}
-
-function plotHome(home){
-  map.selectAll("circles")
-  .data(home).enter()
-  .append("circle")
-  .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
-  .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
-  .attr("r", "3px")
-  .attr("fill", "green")
-  .attr('class', 'home')
-  .on("mouseover", function(d) {
-    console.log(d.location);
-    div.transition()
-    .duration(200)
-    .style("opacity", .9);
-    div.html(d.id /*+ "<br/>" + d.close*/)
-    .style("left", (d3.event.pageX) + "px")
-    .style("top", (d3.event.pageY - 28) + "px");
-  })
-  .on("mouseout", function(d) {
-    div.transition()
-    .duration(500)
-    .style("opacity", 0);
-  });
-}
-
-function avLocation(locations){
-  var la = 0;
-  var lon = 0;
-  for (var i = 0; i < locations.length; i++) {
-    la = la + parseFloat(locations[i].lat);
-    lon = lon + parseFloat(locations[i].long);
+    return a;
   }
 
-  la = la/locations.length;
-  lon = lon/locations.length;
 
+  function findStops(gpsData){
+    var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+    var stops = [];
+    var dif = 0;
+    for (var i = 0; i < gpsData.length-1; i++) {
 
-  var location = {
-    location : locations[0].location,
-    lat : la.toString(),
-    long : lon.toString()
+      dif = d3.timeMinute.count( format(gpsData[i].Timestamp), format(gpsData[i+1].Timestamp));
+
+      if ( dif >= 5  ) {
+        var stop = {
+          Timestamp : gpsData[i].Timestamp,
+          id : gpsData[i].id,
+          lat : gpsData[i].lat,
+          long : gpsData[i].long,
+          stopTime : dif
+        }
+        stops.push(stop);
+      }
+
+    }
+    return stops;
   }
-  console.log(location);
-  return location;
+  function getAllStops(gps){
+    var ind;
+    var a = [];
+    for (var i = 0; i < gps.length; i++) {
+      a.push(findStops(gps[i]));
+    }
+    return a;
+  }
 
-}
+  function plotStops(stops, id){
+    map.selectAll("circles")
+    .data(stops).enter()
+    .append("circle")
+    .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
+    .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
+    .attr("r", "4px")
+    .attr("fill", "blue")
+    .attr("class", "stops"+id)
+    .on("mouseover", function(d) {
+      console.log(d);
+      div.transition()
+      .duration(200)
+      .style("opacity", .9);
+      div.html(d.Timestamp /*+ "<br/>" + d.close*/)
+      .style("left", (d3.event.pageX) + "px")
+      .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseout", function(d) {
+      div.transition()
+      .duration(500)
+      .style("opacity", 0);
+    });;
+  }
 
-function stopAndTransaction(stops, transactions){
-  var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
-  var formatCC = d3.timeParse('%m/%d/%Y %H:%M'); // 1/6/2014 7:28
+  function plotLocation(location){
+    // add circles to svg
+    map.selectAll("circles")
+    .data(location)
+    .append("circle")
+    .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
+    .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
+    .attr("r", "3px")
+    .attr("fill", "yellow")
+    .on("mouseover", function(d) {
+      //console.log(d.location, d.long, d.lat);
+      div.transition()
+      .duration(200)
+      .style("opacity", .9);
+      div.html(d.location /*+ "<br/>" + d.close*/)
+      .style("left", (d3.event.pageX) + "px")
+      .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseout", function(d) {
+      div.transition()
+      .duration(500)
+      .style("opacity", 0);
+    });
+  }
+
+  function plotLocations(locations){
+    // add circles to svg
+    map.selectAll("circles")
+    .data(locations).enter()
+    .append("circle")
+    .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
+    .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
+    .attr("r", "3px")
+    .attr("fill", "yellow")
+    .attr("class", "location")
+    .on("mouseover", function(d) {
+      console.log(d.location, d.lat,d.long);
+      div.transition()
+      .duration(200)
+      .style("opacity", .9);
+      div.html(d.location /*+ "<br/>" + d.close*/)
+      .style("left", (d3.event.pageX) + "px")
+      .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseout", function(d) {
+      div.transition()
+      .duration(500)
+      .style("opacity", 0);
+    });
+  }
+
+  function plotHome(home){
+    map.selectAll("circles")
+    .data(home).enter()
+    .append("circle")
+    .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
+    .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
+    .attr("r", "3px")
+    .attr("fill", "green")
+    .attr('class', 'home')
+    .on("mouseover", function(d) {
+      console.log(d.id, getFirstname(d.id, carAssign), getLastname(d.id, carAssign), d.lat,d.long);
+      div.transition()
+      .duration(200)
+      .style("opacity", .9);
+      div.html(d.id /*+ "<br/>" + d.close*/)
+      .style("left", (d3.event.pageX) + "px")
+      .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseout", function(d) {
+      div.transition()
+      .duration(500)
+      .style("opacity", 0);
+    });
+  }
+
+  function avLocation(locations){
+    var la = 0;
+    var lon = 0;
+    for (var i = 0; i < locations.length; i++) {
+      la = la + parseFloat(locations[i].lat);
+      lon = lon + parseFloat(locations[i].long);
+    }
+
+    la = la/locations.length;
+    lon = lon/locations.length;
 
 
-  var cc =[];
-  var positions = [];
-  var ind = -1;
+    var location = {
+      location : locations[0].location,
+      lat : la.toString(),
+      long : lon.toString()
+    }
+    return location;
 
-  for (var i = 0; i < stops.length; i++) {
-    ind = transactions.findIndex(transaction => (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) <= stops[i].stopTime && (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) >=0 );
+  }
+
+  function stopAndTransaction(stops, transactions){
+    var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+    var formatCC = d3.timeParse('%m/%d/%Y %H:%M'); // 1/6/2014 7:28
+
+
+    var cc =[];
+    var positions = [];
+    var ind = -1;
+
+    for (var i = 0; i < stops.length; i++) {
+      ind = transactions.findIndex(transaction => (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) <= stops[i].stopTime && (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) >=0 );
+      if (ind != -1) {
+        cc.push(transactions[ind]);
+        positions.push(stops[i]);
+      }
+
+    }
+
+    return positions ;
+  }
+
+  function stopAndNoTransaction(stops, transactions){
+    var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+    var formatCC = d3.timeParse('%m/%d/%Y %H:%M'); // 1/6/2014 7:28
+
+
+    var x =[];
+    var positions = [];
+    var ind = -1;
+
+    for (var i = 0; i < stops.length; i++) {
+      ind = transactions.findIndex(transaction => (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) <= stops[i].stopTime && (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) >=0 );
+      if (ind == -1) {
+        //x.push(transactions[ind]);
+        positions.push(stops[i]);
+      }
+
+    }
+
+    return positions ;
+  }
+
+  function getTransactions(FirstName, LastName ,ccData, startDate, endDate){
+    var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+    var formatCC = d3.timeParse('%m/%d/%Y %H:%M'); // 1/6/2014 7:28
+    transactions = [];
+    for (var i = 0; i < ccData.length; i++) {
+      if ( d3.timeMinute.count( format(startDate), formatCC(ccData[i].timestamp)) >= 0 && d3.timeMinute.count(formatCC(ccData[i].timestamp), format(endDate)) >= 0) {
+        if (ccData[i].FirstName == FirstName && ccData[i].LastName == LastName) {
+          transactions.push(ccData[i]);
+        }
+      }
+    }
+    return transactions;
+  }
+
+  function getFirstname(id, carAssign){
+    var ind = carAssign.findIndex(name => name.CarID == id);
     if (ind != -1) {
-      cc.push(transactions[ind]);
-      positions.push(stops[i]);
-    }
-
-  }
-
-  return positions ;
-}
-
-function stopAndNoTransaction(stops, transactions){
-  var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
-  var formatCC = d3.timeParse('%m/%d/%Y %H:%M'); // 1/6/2014 7:28
-
-
-  var x =[];
-  var positions = [];
-  var ind = -1;
-
-  for (var i = 0; i < stops.length; i++) {
-    ind = transactions.findIndex(transaction => (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) <= stops[i].stopTime && (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) >=0 );
-    if (ind == -1) {
-      //x.push(transactions[ind]);
-      positions.push(stops[i]);
-    }
-
-  }
-
-  return positions ;
-}
-
-function getTransactions(FirstName, LastName ,ccData, startDate, endDate){
-  var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
-  var formatCC = d3.timeParse('%m/%d/%Y %H:%M'); // 1/6/2014 7:28
-  transactions = [];
-  for (var i = 0; i < ccData.length; i++) {
-    if ( d3.timeMinute.count( format(startDate), formatCC(ccData[i].timestamp)) >= 0 && d3.timeMinute.count(formatCC(ccData[i].timestamp), format(endDate)) >= 0) {
-      if (ccData[i].FirstName == FirstName && ccData[i].LastName == LastName) {
-        transactions.push(ccData[i]);
-      }
+      return carAssign[ind].FirstName;
     }
   }
-  return transactions;
-}
 
-function getFirstname(id, carAssign){
-  var ind = carAssign.findIndex(name => name.CarID == id);
-  if (ind != -1) {
-    return carAssign[ind].FirstName;
-  }
-}
-
-function getLastname(id, carAssign){
-  var ind = carAssign.findIndex(name => name.CarID == id);
-  if (ind != -1) {
-    return carAssign[ind].LastName;
-  }
-}
-
-function getEmploymentType(id, carAssign){
-  var ind = carAssign.findIndex(name => name.CarID == id);
-  if (ind != -1) {
-    return carAssign[ind].CurrentEmploymentType;
-  }
-}
-function getEmploymentTitle(id, carAssign){
-  var ind = carAssign.findIndex(name => name.CarID == id);
-  if (ind != -1) {
-    return carAssign[ind].CurrentEmploymentTitle;
-  }
-}
-
-function getAllShopLocation(gps, carAssign, shop){
-  var locations = [];
-  var startD = gps[0].Timestamp;
-  var endD = gps[gps.length-1].Timestamp;
-  for (var id = 0; id < 35; id++) {
-    var idRoute = getCarRoute(id, gps, 1, startD,endD);
-    var stops = findStops(idRoute);
-    var tra = getTransactions(getFirstname(id,carAssign),getLastname(id,carAssign), ccData, startD,  endD);
-    var loc = transactionsAt(stops, tra, shop);
-    if (loc.length >0) {
-      for (var i = 0; i < loc.length; i++) {
-        locations.push(loc[i]);
-      }
-    }
-
-  }
-  return locations;
-}
-
-function transactionsAt(stops, transactions, shop){
-  var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
-  var formatCC = d3.timeParse('%m/%d/%Y %H:%M'); // 1/6/2014 7:28
-
-
-  var cc =[];
-  var positions = [];
-  var ind = -1;
-
-  for (var i = 0; i < stops.length; i++) {
-    ind = transactions.findIndex(transaction => (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) <= stops[i].stopTime && (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) >=0 );
-    if (ind != -1 && transactions[ind].location == shop) {
-      cc.push(transactions[ind]);
-      positions.push(stops[i]);
-    }
-
-  }
-  return positions ;
-}
-
-function atAPosition(stops, lat, long, radius){
-  var xd;
-  var yd;
-  var dist;
-  var s = [];
-  for (var i = 0; i < stops.length; i++) {
-    for (var z = 0; z < stops[i].length; z++) {
-    xd = stops[i][z].lat - lat;
-    yd = stops[i][z].long - long;
-    dist = Math.sqrt(Math.pow(xd, 2) + Math.pow(yd, 2));
-    if (dist < radius) {
-      s.push(stops[i][z])
-    }
-  }
-  }
-  console.log(s);
-  return s;
-}
-
-this.show = function(id){
-  /*var idRoute = getCarRoute(id, d[id-1], 1, startD,endD);
-  plotGps(idRoute);
-  plotStops(stops);*/
-  map.selectAll(".gps").remove();
-  map.selectAll(".stops").remove();
-  if (id<36) {
-    plotGps(d[id-1]);
-    plotStops(stops[id-1]);
-  }
-  else {
-    var x =[101,104,105,106,107];
-    ind = x.findIndex(car => id == car);
+  function getLastname(id, carAssign){
+    var ind = carAssign.findIndex(name => name.CarID == id);
     if (ind != -1) {
-      ind = 35+ind;
-      plotGps(d[ind]);
-      plotStops(stops[ind]);
+      return carAssign[ind].LastName;
     }
   }
 
-  console.log( "Name:" , getFirstname(id,carAssign) , getLastname(id,carAssign) , "\n", "CurrentEmploymentType: ", getEmploymentType(id,carAssign), "\n" ,"CurrentEmploymentTitle: ", getEmploymentTitle(id,carAssign));
+  function getEmploymentType(id, carAssign){
+    var ind = carAssign.findIndex(name => name.CarID == id);
+    if (ind != -1) {
+      return carAssign[ind].CurrentEmploymentType;
+    }
+  }
+  function getEmploymentTitle(id, carAssign){
+    var ind = carAssign.findIndex(name => name.CarID == id);
+    if (ind != -1) {
+      return carAssign[ind].CurrentEmploymentTitle;
+    }
+  }
 
-};
+  function getAllShopLocation(gps, carAssign, shop){
+    var locations = [];
+    var startD = gps[0].Timestamp;
+    var endD = gps[gps.length-1].Timestamp;
+    for (var id = 0; id < 35; id++) {
+      var idRoute = getCarRoute(id, gps, 1, startD,endD);
+      var stops = findStops(idRoute);
+      var tra = getTransactions(getFirstname(id,carAssign),getLastname(id,carAssign), ccData, startD,  endD);
+      var loc = transactionsAt(stops, tra, shop);
+      if (loc.length >0) {
+        for (var i = 0; i < loc.length; i++) {
+          locations.push(loc[i]);
+        }
+      }
+
+    }
+    return locations;
+  }
+
+  function transactionsAt(stops, transactions, shop){
+    var format = d3.timeParse('%m/%d/%Y %H:%M:%S');
+    var formatCC = d3.timeParse('%m/%d/%Y %H:%M'); // 1/6/2014 7:28
+
+
+    var cc =[];
+    var positions = [];
+    var ind = -1;
+
+    for (var i = 0; i < stops.length; i++) {
+      ind = transactions.findIndex(transaction => (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) <= stops[i].stopTime && (d3.timeMinute.count( format(stops[i].Timestamp), formatCC(transaction.timestamp))) >=0 );
+      if (ind != -1 && transactions[ind].location == shop) {
+        cc.push(transactions[ind]);
+        positions.push(stops[i]);
+      }
+
+    }
+    return positions ;
+  }
+
+  function atAPosition(stops, lat, long, radius){
+    var xd;
+    var yd;
+    var dist;
+    var s = [];
+    for (var i = 0; i < stops.length; i++) {
+      for (var z = 0; z < stops[i].length; z++) {
+        xd = stops[i][z].lat - lat;
+        yd = stops[i][z].long - long;
+        dist = Math.sqrt(Math.pow(xd, 2) + Math.pow(yd, 2));
+        if (dist < radius) {
+          s.push(stops[i][z])
+        }
+      }
+    }
+    return s;
+  }
+
+  function getStopsStartToEnd(stops, startD, endD){
+    var format = d3.utcParse('%m/%d/%Y %H:%M:%S');
+    var stop = []
+    for (var i = 0; i < stops.length; i++) {
+      if (format(stops[i].Timestamp) >= format(startD) && format(stops[i].Timestamp) <= format(endD)  )  {
+        stop.push(stops[i]);
+      }else if (format(stops[i].Timestamp) > format(endD)) {
+        break;
+      }
+    }
+    return stop;
+  }
+
+
+  this.show = function(id, start, end){
+    /*var idRoute = getCarRoute(id, d[id-1], 1, startD,endD);
+    plotGps(idRoute);
+    plotStops(stops);*/
+
+
+
+    if (id<36) {
+      map.selectAll(".gps"+pID).remove();
+      map.selectAll(".stops" + pID).remove();
+      pID = id;
+      var r = getCarRoute(id, d[id-1], 1, start, end);
+      plotGps(r,2,id);
+      //var y = findStops(r);
+      var y = getStopsStartToEnd(stops[id-1], start, end);
+      plotStops(y,id);
+      console.log( "Name:" , getFirstname(id,carAssign) , getLastname(id,carAssign) , "\n", "CurrentEmploymentType: ", getEmploymentType(id,carAssign), "\n" ,"CurrentEmploymentTitle: ", getEmploymentTitle(id,carAssign));
+    }
+    else {
+      map.selectAll(".gps"+pID).remove();
+      map.selectAll(".stops"+pID).remove();
+      console.log(pID);
+      pID = id;
+      var x =[101,104,105,106,107];
+      ind = x.findIndex(car => id == car);
+      if (ind != -1) {
+        ind = 35+ind;
+        var r = getCarRoute(id, d[ind], 1, start, end);
+        plotGps(r,2,id);
+        var y = findStops(r);
+        plotStops(y,id);
+      }
+    }
+
+
+
+  };
 
 }
