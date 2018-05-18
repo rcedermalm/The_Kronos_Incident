@@ -20,6 +20,25 @@ function getMap(gps, locationData, ccData, carAssign,home ){
 
   d3.json("data/Abila.geojson", drawMaps);
   var d, stops, pID;
+  var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+		  '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
+		  '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A',
+		  '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC',
+		  '#66994D', '#B366CC', '#4D8000', '#B33300', '#CC80CC',
+		  '#66664D', '#991AFF', '#E666FF', '#4DB3FF', '#1AB399',
+		  '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
+		  '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
+		  '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
+		  '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
+  var carIDs =[];
+  var t =[101, 104,105,106,107];
+  for (var i = 1; i < 36; i++) {
+    carIDs.push(i);
+  }
+  for (var i = 0; i < t.length; i++) {
+    carIDs.push(t[i]);
+  }
+
 
   function drawMaps(geojson) {
 
@@ -120,8 +139,11 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     .append("circle")
     .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
     .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
-    .attr("r", "1px")
-    .attr("fill", "red")
+    .attr("r", "1.2px")
+    .attr("fill", function(d){
+    ind = carIDs.findIndex(id => id == d.id) ;
+    return colorArray[ind];})
+    .attr("fill-opacity", 0.2)
     .attr("class","gps"+id);
   }
 
@@ -246,10 +268,14 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     .attr("cx", function (d) { return projection([d.long, d.lat])[0]; })
     .attr("cy", function (d) { return projection([d.long, d.lat])[1]; })
     .attr("r", "4px")
-    .attr("fill", "blue")
+    .attr("fill-opacity", 0.2)
+    .attr("fill", function(d){
+    ind = carIDs.findIndex(id => id == d.id) ;
+    return colorArray[ind];})
+    .attr('stroke', 'black')
     .attr("class", "stops"+id)
     .on("mouseover", function(d) {
-      console.log(d);
+      console.log(d.Timestamp,d.id,d.lat,d.long,d.stopTime);
       div.transition()
       .duration(200)
       .style("opacity", .9);
@@ -274,7 +300,6 @@ function getMap(gps, locationData, ccData, carAssign,home ){
     .attr("r", "3px")
     .attr("fill", "yellow")
     .on("mouseover", function(d) {
-      //console.log(d.location, d.long, d.lat);
       div.transition()
       .duration(200)
       .style("opacity", .9);
@@ -518,7 +543,7 @@ function getMap(gps, locationData, ccData, carAssign,home ){
   this.show = function(id, start, end){
     if (id<36) {
       var r = getCarRoute(id, d[id-1], 1, start, end);
-      plotGps(r,3,id);
+      plotGps(r,10,id);
       //var y = findStops(r);
       var y = getStopsStartToEnd(stops[id-1], start, end);
       plotStops(y,id);
@@ -529,9 +554,8 @@ function getMap(gps, locationData, ccData, carAssign,home ){
       ind = x.findIndex(car => id == car);
       if (ind != -1) {
         ind = 35+ind;
-        console.log(ind);
         var r = getCarRoute(id, d[ind], 1, start, end);
-        plotGps(r,3,id);
+        plotGps(r,10,id);
         var y = findStops(r);
         plotStops(y,id);
       }
